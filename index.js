@@ -1,4 +1,4 @@
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const inquirer = require('inquirer');
 
 const connection = mysql.createConnection({
@@ -9,7 +9,7 @@ const connection = mysql.createConnection({
     user: 'root',
 
     password: 'password',
-    database: 'employee_tracker',
+    database: 'employer_tracker',
 
 });
 
@@ -88,13 +88,13 @@ const addDepartment = () => {
             type: 'input',
             message: 'Enter name of the department you will like to add'
         })
-        .then((Responce) => {
+        .then((response) => {
             connection.query('INSERT INTO department SET ?', {
-                name: responce.name
+                name: response.name
             },
                 (err, res) => {
                     if (err) throw err;
-                    consloe.log('department added')
+                    console.log('department added')
                     start();
                 })
 
@@ -102,28 +102,128 @@ const addDepartment = () => {
 }
 const addRole = () => {
     connection.query('SELECT * FROM department', (err, results) => {
-        if (err) throw err;
-
-        inquirer
-            .prompt([{
-                name: "departemnt",
-                type: 'rawlist',
-                choices: function () {
-                    const deptArray = [];
-                    results.forEach(({
-                        name
-                    }) => {
-                        deptArray.push(name);
-                    });
-                    return deptArray;
-                }
+      if (err) throw err;
+  
+      inquirer
+        .prompt([{
+            name: 'department',
+            type: 'list',
+            choices: function () {
+              const deptArray = [];
+              results.forEach(({
+                id,
+                name
+              }) => {
+                deptArray.push({
+                  name: name,
+                  value: id
+                });
+              });
+              return deptArray;
+  
+            }
+          },
+          {
+            name: 'title',
+            type: 'input',
+            message: 'Enter title of role you would like to add'
+          },
+          {
+            name: 'salary',
+            type: 'input',
+            message: 'Enter salary for this role'
+          }
+        ])
+        .then((response) => {
+          connection.query('INSERT INTO role SET ?', {
+              title: response.title,
+              salary: response.salary,
+              department_id: response.department
             },
-
+            (err, res) => {
+              if (err) throw err;
+              console.log('Role successfully added!')
+              start();
+            });
+        });
+    });
+  };
+  
+  const addEmployee = () => {
+    let manager;
+    connection.query('SELECT * FROM employee WHERE manager_id IS NULL', (err, managerResults) =>{
+      if (err) throw err;
+      
+      const managerChoice = managerResults.map(employee => {
+        return {
+          name: `${employee.first_name} ${employee.last_name}`,
+          value: employee.id
+        };
+      });
+      inquirer
+        .prompt([{
+          name: 'manager',
+          type: 'list',
+          message: 'Select employee\'s manager',
+          choices: managerChoice
+        }])
+        .then ((data) => {
+          manager = data.manager
+  
+          connection.query('SELECT * FROM role', (err, results) => {
+            if(err) throw err;
+  
+            inquirer
+            .prompt([
+              {
+                name: 'role',
+                type: 'list',
+                message: 'Enter employee\'s role',
+                choices: function () {
+                  const roleArray = [];
+                  results.forEach(({
+                    title,
+                    id
+                  }) => {
+                    roleArray.push({
+                      name: title, 
+                      value: id
+                    });
+                  });
+                  return roleArray
+                },
+              },
+              {
+                name: 'firstName', 
+                type: 'input', 
+                message: 'Enter employee\'s first name'
+              },
+              {
+                name: 'lastName',
+                type: 'input',
+                message: 'Enter employee\'s last name'
+              }
             ])
-
-    })
-}
-connection.connect((err) => {
+          .then((answer) => {
+            connection.query('INSERT INTO employee SET ?', {
+              first_name: answer.firstName, 
+              last_name: answer.lastName,
+              role_id: answer.role,
+              manager_id: manager
+            },
+            (err, res) => {
+              if(err) throw err;
+              console.log('Employee successfully added!');
+              start();
+            });
+          });
+        });
+      });
+    });
+  };
+  
+ 
+  connection.connect((err) => {
     if (err) throw err;
-
-})
+    start();
+  });
