@@ -90,7 +90,56 @@ const addDepartment = () => {
         });
     });
 };
-
+const addRole = () => {
+    connection.query('SELECT * FROM department', (err, results) => {
+      if (err) throw err;
+  
+      inquirer
+        .prompt([{
+            name: 'department',
+            type: 'list',
+            choices: function () {
+              const deptArray = [];
+              results.forEach(({
+                id,
+                name
+              }) => {
+                deptArray.push({
+                  name: name,
+                  value: id
+                });
+              });
+              return deptArray;
+  
+            }
+          },
+          {
+            name: 'title',
+            type: 'input',
+            message: 'Enter title of role you would like to add'
+          },
+          {
+            name: 'salary',
+            type: 'input',
+            message: 'Enter salary for this role'
+          }
+        ])
+        .then((response) => {
+          connection.query('INSERT INTO role SET ?', {
+              title: response.title,
+              salary: response.salary,
+              department_id: response.department
+            },
+            (err, res) => {
+              if (err) throw err;
+              console.log('Role successfully added!')
+              start();
+            });
+        });
+    });
+  };
+  
+  
 
 connection.connect((err) => {
   if (err) throw err;
