@@ -139,8 +139,80 @@ const addRole = () => {
     });
   };
   
+  const addEmployee = () => {
+    let manager;
+    connection.query('SELECT * FROM employee WHERE manager_id IS NULL', (err, managerResults) =>{
+      if (err) throw err;
+      
+      const managerChoice = managerResults.map(employee => {
+        return {
+          name: `${employee.first_name} ${employee.last_name}`,
+          value: employee.id
+        };
+      });
+      inquirer
+        .prompt([{
+          name: 'manager',
+          type: 'list',
+          message: 'Select employee\'s manager',
+          choices: managerChoice
+        }])
+        .then ((data) => {
+          manager = data.manager
   
-
+          connection.query('SELECT * FROM role', (err, results) => {
+            if(err) throw err;
+  
+            inquirer
+            .prompt([
+              {
+                name: 'role',
+                type: 'list',
+                message: 'Enter employee\'s role',
+                choices: function () {
+                  const roleArray = [];
+                  results.forEach(({
+                    title,
+                    id
+                  }) => {
+                    roleArray.push({
+                      name: title, 
+                      value: id
+                    });
+                  });
+                  return roleArray
+                },
+              },
+              {
+                name: 'firstName', 
+                type: 'input', 
+                message: 'Enter employee\'s first name'
+              },
+              {
+                name: 'lastName',
+                type: 'input',
+                message: 'Enter employee\'s last name'
+              }
+            ])
+          .then((answer) => {
+            connection.query('INSERT INTO employee SET ?', {
+              first_name: answer.firstName, 
+              last_name: answer.lastName,
+              role_id: answer.role,
+              manager_id: manager
+            },
+            (err, res) => {
+              if(err) throw err;
+              console.log('Employee successfully added!');
+              start();
+            });
+          });
+        });
+      });
+    });
+  };
+  
+  
 connection.connect((err) => {
   if (err) throw err;
   start();
