@@ -1,25 +1,6 @@
 {
-    "name": "Employee-Tracker",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "start": "node index.js"
-    },
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/amandardz/Employee-Tracker.git"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "bugs": {
-      "url": "https://github.com/amandardz/Employee-Tracker/issues"
-    },
-    "homepage": "https://github.com/amandardz/Employee-Tracker#readme",
-    "dependencies": {
-      "inquirer": "^8.0.0",
-      "mysql": "^2.18.1"
-    }
+  "dependencies": {
+    "inquirer": "^8.2.2",
+    "mysql2": "^2.3.3"
   }
+}
