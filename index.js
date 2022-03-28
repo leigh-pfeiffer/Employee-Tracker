@@ -1,5 +1,9 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
+const cTable = require('console.table');
+
+const allEmployeeQuery = 'SELECT employee.id, employee.first_name AS "First Name", employee.last_name AS "Last Name", role.title as Title, role.salary as Salary, department.name AS Department, m.first_name AS Manager FROM employee INNER JOIN role ON employee.role_id=role.id INNER JOIN department ON role.department_id=department.id LEFT JOIN employee m ON employee.manager_id=m.id'
+
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -13,6 +17,8 @@ const connection = mysql.createConnection({
 
 });
 
+
+
 const start = () => {
   inquirer
     .prompt({
@@ -23,9 +29,9 @@ const start = () => {
         'Add Department',
         'Add Role',
         'Add Employee',
-        'View Departments',
-        'View Roles',
-        'View Employees',
+        'View All Departments',
+        'View All Roles',
+        'View All Employees',
         'Update Employee Role',
         'Quit'
       ]
@@ -44,15 +50,15 @@ const start = () => {
           addEmployee();
           break;
 
-        case 'View Departments':
+        case 'View All Departments':
           viewDepartments();
           break;
 
-        case 'View Roles':
+        case 'View All Roles':
           viewRoles();
           break;
 
-        case 'View Employees':
+        case 'View All Employees':
           viewEmployees();
           break;
 
@@ -141,7 +147,7 @@ const addRole = () => {
   
   const addEmployee = () => {
     let manager;
-    connection.query('SELECT * FROM employee WHERE manager_id IS NULL', (err, managerResults) =>{
+    connection.query("SELECT * FROM employee WHERE role_id = '8'", (err, managerResults) =>{
       if (err) throw err;
       
       const managerChoice = managerResults.map(employee => {
@@ -212,7 +218,116 @@ const addRole = () => {
     });
   };
   
+  const viewDepartments = () => { 
+    connection.query('SELECT * FROM department', (err, results) => {
+      if (err) throw err;
+      results.forEach((array) => {
+        console.log(array.name)
+      });
+      start();
+    });
+  };
   
+  const viewRoles = () => {
+    connection.query('SELECT * FROM role', (err, results) => {
+      if (err) throw err;
+      results.forEach((array) => {
+        console.log(array.title)
+      });
+      start();
+    });
+  };
+  
+  const viewEmployees = () => {
+    connection.query(allEmployeeQuery, (err, results) => {
+      if (err) throw err;
+      console.log('');
+      console.table(('All Employees'), results)
+      });
+      start();
+    };
+
+  
+  const updateEmployeeRole = () => {
+    let employee;
+    let role;
+  
+    connection.query('SELECT * FROM employee', (err, results) => {
+      if (err) throw err;
+  
+      const empChoice = results.map(employee => {
+        return {
+          name: `${employee.first_name} ${employee.last_name}`,
+          value: employee.id
+        };
+      });
+  
+      inquirer
+        .prompt([{
+          name: 'employee',
+          type: 'list',
+          message: 'Select employee to update',
+          choices: empChoice
+        }])
+        .then((data) => {
+          employee = data.employee;
+          connection.query('SELECT * FROM role', (err, results) => {
+            if (err) throw err;
+            const roleChoice = results.map(role => {
+              return {
+                name: `${role.title}`,
+                value: `${role.id}`
+              };
+            });
+  
+            inquirer
+              .prompt([{
+                type: 'list',
+                name: 'role',
+                message: 'Select new role for employee',
+                choices: roleChoice
+              }])
+              .then((data) => {
+                role = data.role
+                connection.query('SELECT * FROM employee WHERE manager_id IS NULL', (err, managers) => {
+                  if(err) throw err;
+                  const managerChoice = managers.map(employee => {
+                    return {
+                      name: `${employee.first_name} ${employee.last_name}`,
+                      value: employee.id
+                    };
+                })
+                inquirer
+                .prompt([{
+                  name: 'manager',
+                  type: 'list',
+                  message: 'Select employee\'s manager',
+                  choices: managerChoice
+                }])
+                .then((data) => {
+                  connection.query('UPDATE employee SET ? WHERE ?',
+                  [
+                    {role_id: role,
+                      manager_id: data.manager
+                    }
+                    ,
+                    {id: employee}
+                  ],
+                  (err, res) => {
+                    if (err) throw err;
+                    console.log(res)
+                    console.log(`${res.affectedRows} Employee successfully updated!`);
+                    start();
+                   });
+                });
+            });
+          });
+        });
+      });
+    });
+  };
+  
+ 
 connection.connect((err) => {
   if (err) throw err;
   start();

@@ -1,4 +1,4 @@
--- DROP DATABASE IF EXISTS employer_tracker
+DROP DATABASE IF EXISTS employer_tracker;
 CREATE DATABASE employer_tracker;
 USE employer_tracker;
 
